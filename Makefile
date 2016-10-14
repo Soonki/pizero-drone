@@ -1,7 +1,7 @@
-PREFIX		=	arm-linux-gnueabihf-
-CC			=	gcc
+CC			=	arm-linux-gnueabihf-gcc
 CFLAGS		+=	-Wall
-LDFLAGS		+=	-lm
+LDFLAGS		+=	
+
 
 ###############################################################################
 # USER CONFIG #
@@ -14,13 +14,17 @@ SOURCES 	+= main1.h
 ###############################################################################
 
 VPATH		:= 	$(dir $(shell find src/ -name '*.c') $(shell find src/ -name '*.h')) src/init
-SOURCES 	:= 	$(notdir $(shell find src/ -name '*.c'))
-INCLUDES	:=	$(foreach d, $(wildcard src/*/includes), -I$d)
-INCLUDES	+= 	-Iconfig
-OBJ			:=	$(patsubst %.c, build/%.o, $(SOURCES))
-SOURCES		+= $(notdir $(wildcard $(INCLUDES)/*.h) )
+SOURCES 	:= 	$(notdir $(shell find src/ -name '*.c') $(wildcard $(INCLUDES)/*.h))
+INCLUDES	:=	$(foreach d, $(wildcard src/*/includes), -I$d) -Iconfig
 EXECUTABLE	?=	cpidrone.elf
 
+LIB_MODULES	:=	wiringPi
+INCLUDES	+=	$(foreach m, $(LIB_MODULES), -Ilib/$m/include)
+LIB_DIRS	+=	$(foreach m, $(LIB_MODULES), -Llib/$m/lib)
+LDFLAGS		+=	-lm -lpthread $(foreach m, $(LIB_MODULES), -l$m)
+
+
+OBJ			:=	$(patsubst %.c, build/%.o, $(SOURCES))
 
 ###############################################################################
 # TARGETS #
@@ -32,17 +36,22 @@ all: $(SOURCES) $(EXECUTABLE)
 compile: $(SOURCES) $(OBJ)
 
 $(EXECUTABLE): $(OBJ)
-	$(CC) $(OBJ) -o bin/$@ $(LDFLAGS)
+	@echo "Building $(EXECUTABLE)"
+	@$(CC) $(OBJ) -o bin/$@ $(LIB_DIRS) $(LDFLAGS)
+	@echo "DONE!"
 
 build/%.o: %.c
 	@mkdir -p $(@D)
-	$(CC) $(CFLAGS) -c $< -o $@ $(INCLUDES)
+	@echo "Compiling $@"
+	@$(CC) $(CFLAGS) -c $< -o $@ $(INCLUDES)
 
 clean_o:
-	rm -rf build/*.o
+	@echo "Removing .o files"
+	@rm -rf build/*.o
 
 clean: clean_o
-	rm -rf bin/*.elf
+	@echo "Removing .elf files"
+	@rm -rf bin/*.elf
 
 test:
 	@echo "SRC: $(SOURCES)"

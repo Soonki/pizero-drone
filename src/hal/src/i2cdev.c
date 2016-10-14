@@ -5,6 +5,8 @@
  *      Author: anand
  */
 
+#include "i2cdev.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -20,7 +22,6 @@
 
 #include <linux/i2c-dev.h>
 
-#include "i2cdev.h"
 
 int init_dev(i2cdev* dev, uint8_t addr) {
 	dev->addr = addr;
@@ -56,7 +57,7 @@ int8_t readBytes(i2cdev* dev, uint8_t regAddr, uint8_t length, uint8_t *data) {
 		close(fd);
 		return (-1);
 	}
-	if (write(fd, regAddr, 1) != 1) {
+	if (write(fd, &regAddr, 1) != 1) {
 		fprintf(stderr, "Failed to write reg: %s\n", strerror(errno));
 	}
 
